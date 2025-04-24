@@ -1,15 +1,30 @@
-The application was deployed in a local Minikube Kubernetes cluster. It consists of an NFS server provisioner for dynamic persistent storage and a simple Nginx-based HTTP server.
+# Kubernetes HTTP Server with NFS Storage
 
-Helm was used to install the NFS server provisioner. A PersistentVolumeClaim was created, which was then mounted to the Nginx pod. A Kubernetes Job was used to populate the NFS volume with sample HTML content.
+This project demonstrates how to deploy an HTTP server (NGINX) on a Kubernetes cluster using Minikube. The web content is shared using an NFS server and a dynamically provisioned PersistentVolumeClaim.
 
-The web content is accessible via a Service. Below is a screenshot of the web application running in the browser.
+## How to Run
 
-NFS Server Provisioner (installed via Helm) dynamically creates Persistent Volumes.
+```bash
+minikube start
 
-PersistentVolumeClaim requests storage using the custom StorageClass (nfs-sc).
+# Mount local folder to use as NFS backend (adjust path as needed)
+minikube mount C:\tmp\nfs:/mnt/nfs
 
-Nginx Deployment mounts the PVC and serves static HTML files from the volume.
+# Add Helm repo
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
 
-Kubernetes Job writes sample HTML content to the shared NFS volume.
+# Install NFS server provisioner
+helm install nfs-server-provisioner stable/nfs-server-provisioner `
+  --set nfs.server.address=$(minikube ip) `
+  --set nfs.server.path="/mnt/nfs" `
+  --set storageClass.name="nfs-sc"
 
-Service exposes the Nginx pod to external clients.
+# Apply Kubernetes manifests
+kubectl apply -f pvc.yaml
+kubectl apply -f nginx-deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f job.yaml
+
+# Access your application
+minikube service http-server-service
