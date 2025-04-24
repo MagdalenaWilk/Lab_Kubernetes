@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nfs-copy-content
+spec:
+  template:
+    spec:
+      containers:
+        - name: copy-html
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<html><body><h1>Hello from NFS!</h1></body></html>" > /usr/share/nginx/html/index.html;
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+      restartPolicy: OnFailure
+      volumes:
+        - name: html-volume
+          persistentVolumeClaim:
+            claimName: webapp-pvc
